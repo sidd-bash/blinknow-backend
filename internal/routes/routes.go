@@ -11,21 +11,39 @@ import (
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
 
+	// 🔹 Services and handlers
 	twilioService := services.NewTwilioService()
 	authHandler := handlers.NewAuthHandler(db, twilioService)
 	userHandler := &handlers.UserHandler{DB: db}
+	productHandler := &handlers.ProductHandler{DB: db}
 
+	// ✅ Public routes
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Welcome to Blinknow API 🚀"})
+	})
+
+	// ✅ Auth routes
 	auth := r.Group("/auth")
 	{
 		auth.POST("/request-otp", authHandler.RequestOTP)
 		auth.POST("/verify-otp", authHandler.VerifyOTP)
 	}
 
-	protected := r.Group("/user")
-	protected.Use(middleware.AuthMiddleware(db))
+	// ✅ Protected user routes
+	user := r.Group("/user")
+	user.Use(middleware.AuthMiddleware(db))
 	{
-		protected.POST("/profile", userHandler.CompleteProfile)
-		protected.GET("/profile", userHandler.GetProfile)
+		user.POST("/profile", userHandler.CompleteProfile)
+		user.GET("/profile", userHandler.GetProfile)
+	}
+
+	// ✅ Protected product & category routes
+	api := r.Group("/api")
+	api.Use(middleware.AuthMiddleware(db))
+	{
+		api.GET("/categories", productHandler.GetCategories)
+		api.GET("/products", productHandler.GetProducts)
+		api.GET("/products/:id", productHandler.GetProductByID)
 	}
 
 	return r

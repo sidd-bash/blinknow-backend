@@ -8,6 +8,8 @@ import (
     "github.com/sidd-bash/blinknow-backend/internal/config"
     "github.com/sidd-bash/blinknow-backend/internal/models"
     "github.com/sidd-bash/blinknow-backend/internal/routes"
+    "github.com/sidd-bash/blinknow-backend/internal/services"
+
 )
 
 func main() {
@@ -22,7 +24,10 @@ func main() {
 
     config.DB.AutoMigrate(
         &models.User{},
+        &models.Category{},
+        &models.Product{},
     )
+    services.SeedData(config.DB)
 
 
     r := routes.SetupRouter(config.DB)
