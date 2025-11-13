@@ -1,26 +1,37 @@
 package main
 
 import (
-	"net/http"
+    "fmt"
+    "os"
 
-	"github.com/gin-gonic/gin"
+    "github.com/joho/godotenv"
+    "github.com/sidd-bash/blinknow-backend/internal/config"
+    "github.com/sidd-bash/blinknow-backend/internal/models"
+    "github.com/sidd-bash/blinknow-backend/internal/routes"
 )
 
 func main() {
-	r := gin.Default()
+    // 🔹 Load environment variables once globally
+    if err := godotenv.Load(); err != nil {
+        fmt.Println("⚠️ No .env file found — using system environment variables")
+    } else {
+        fmt.Println("✅ Loaded .env successfully")
+    }
 
-	// Simple health check route
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Welcome to Coinly API 🚀",
-		})
-	})
+    config.Init()
 
-	// Example user route
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"pong": "coinly"})
-	})
+    config.DB.AutoMigrate(
+        &models.User{},
+    )
 
-	// Start server on port 8080
-	r.Run(":8080")
+
+    r := routes.SetupRouter(config.DB)
+
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+    fmt.Println("🚀 Starting blinknow backend on port", port)
+    r.Run(":" + port)
 }
